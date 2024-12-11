@@ -4,7 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "UserEntity")
+@Document(collection = "user_entity")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,7 +15,7 @@ public class UserEntity {
     @Id
     public String id;
     public String name;
-    public Long PhoneNumber;
+    public Long phoneNumber;
     public String email;
     public boolean anniversary;
 }

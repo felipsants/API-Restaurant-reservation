@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "ReservationEntity")
+@Document(collection = "reservation_Entity")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 public class ReservationEntity {
 
     @Id
-    private String Id;
-    private String UserId;
+    private String id;
+    private String userId;
     private String table;
     private LocalDateTime reservationDate;
     private int quantity;
