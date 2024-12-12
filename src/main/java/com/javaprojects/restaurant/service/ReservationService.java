@@ -5,8 +5,6 @@ import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 public class ReservationService {
     @Autowired
@@ -16,13 +14,13 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
-    public ReservationEntity findReservationById(String id) {
+    public ReservationEntity getReservationById(String id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User Not Found"));
     }
 
-    public ReservationEntity findReservationByEmail(String email) {
-        return reservationRepository.findById(email)
+    public ReservationEntity getReservationByUserId(String userId) {
+        return reservationRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User Not Found"));
     }
 
