@@ -5,8 +5,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 
 @Document(collection = "reservation_entity")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
