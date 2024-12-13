@@ -3,6 +3,7 @@ package com.javaprojects.restaurant.controller;
 import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import com.javaprojects.restaurant.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +37,12 @@ public class ReservationController {
     @GetMapping("/hour/{reservationHour}")
     public List<ReservationEntity> getReservationsHour(@PathVariable String reservationHour) {
         return reservationService.getReservationsByHour(reservationHour);
+    }
+
+    @GetMapping("/delete/{id}")
+    public ResponseEntity<String> deleteReservation(@PathVariable String id) {
+        reservationService.deleteReservation(id);
+        return ResponseEntity.ok("Reservation deleted and tables released.");
     }
 
     @GetMapping

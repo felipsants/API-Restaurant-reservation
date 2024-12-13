@@ -41,6 +41,7 @@ public class ReservationService {
             table.setAvailable(false);
             tableRepository.save(table);
         });
+
         // Associa as mesas reservadas à reserva
         String tableNames = reservedTables.stream()
                 .map(TableEntity::getName)
@@ -56,6 +57,26 @@ public class ReservationService {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation Not Found"));
     }
+
+    public void deleteReservation(String reservationId) {
+        ReservationEntity reservation = getReservationById(reservationId);
+
+        // Identificar as mesas alocadas (usando o nome das mesas armazenado no campo `table`)
+        String[] tableNames = reservation.getTable().split(", ");
+
+        // Atualizar a disponibilidade das mesas
+        for (String tableName : tableNames) {
+            TableEntity table = tableRepository.findByName(tableName)
+                    .orElseThrow(() -> new RuntimeException("Table not found: " + tableName));
+            table.setAvailable(true);
+            tableRepository.save(table);
+        }
+
+        // Remover a reserva
+        reservationRepository.deleteById(reservationId);
+    }
+
+
 
     public ReservationEntity getReservationByUserId(String userId) {
         return reservationRepository.findByUserId(userId)
