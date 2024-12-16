@@ -21,22 +21,32 @@ public class ReservationService {
 
     public ReservationEntity createReservation(ReservationEntity reservation) {
         int requiredSeats = reservation.getQuantity();
-        List<TableEntity> availableTables = tableRepository.findByAvailableTrueOrderByPlacesAsc();
+        // Ordenar as mesas do maior para o menor número de lugares
+        List<TableEntity> availableTables = tableRepository.findByAvailableTrueOrderByPlacesDesc();
 
         // Lista de mesas que serão reservadas
         List<TableEntity> reservedTables = new ArrayList<>();
         int totalSeatsAllocated = 0;
 
+        // Primeiro, tenta alocar as maiores mesas possíveis
         for (TableEntity table : availableTables) {
-            reservedTables.add(table);
-            totalSeatsAllocated += table.getPlaces();
+            if (totalSeatsAllocated < requiredSeats) {
+                reservedTables.add(table);
+                totalSeatsAllocated += table.getPlaces();
 
-            // Parar se já atingimos o número necessário de lugares
-            if (totalSeatsAllocated >= requiredSeats) {
-                break;
+                // Se já atingiu ou superou a quantidade necessária de lugares, pare
+                if (totalSeatsAllocated >= requiredSeats) {
+                    break;
+                }
             }
         }
 
+        // Verifica se foi possível alocar lugares suficientes
+        if (totalSeatsAllocated < requiredSeats) {
+            throw new RuntimeException("Não há mesas suficientes disponíveis para acomodar essa reserva.");
+        }
+
+        // Marcar as mesas como não disponíveis
         reservedTables.forEach(table -> {
             table.setAvailable(false);
             tableRepository.save(table);
@@ -51,7 +61,6 @@ public class ReservationService {
         // Salvar e retornar a reserva
         return reservationRepository.save(reservation);
     }
-
 
     public ReservationEntity getReservationById(String id) {
         return reservationRepository.findById(id)
@@ -76,10 +85,8 @@ public class ReservationService {
         reservationRepository.deleteById(reservationId);
     }
 
-
-
-    public ReservationEntity getReservationByUserId(String userId) {
-        return reservationRepository.findByUserId(userId)
+    public ReservationEntity getReservationByUserEmail(String userEmail) {
+        return reservationRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation Not Found"));
     }
 
