@@ -110,4 +110,18 @@ public class ReservationService {
         return reservationRepository.findAll();  // Busca todas as reservas
     }
 
+    public ReservationEntity updateReservation(String userEmail, ReservationEntity updatedReservation) {
+        ReservationEntity reservation = getReservationByUserEmail(userEmail);
+
+        if(updatedReservation.getReservationDate() != null) {
+            reservation.setReservationDate(updatedReservation.getReservationDate());
+        }
+
+        if(updatedReservation.getReservationHour() != null) {
+            reservation.setReservationHour(updatedReservation.getReservationHour());
+        }
+
+        return reservationRepository.save(reservation);
+    }
+
 }

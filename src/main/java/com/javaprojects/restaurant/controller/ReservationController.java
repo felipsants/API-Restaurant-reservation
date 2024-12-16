@@ -3,6 +3,7 @@ package com.javaprojects.restaurant.controller;
 import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import com.javaprojects.restaurant.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,5 +49,15 @@ public class ReservationController {
     @GetMapping
     public List<ReservationEntity> getAllReservations() {
         return reservationService.getAllReservations();
+    }
+
+    @PutMapping("/updated/{userEmail}")
+    public ResponseEntity<ReservationEntity> updateReservation(@PathVariable String userEmail, @RequestBody ReservationEntity reservation) {
+        try{
+            reservationService.updateReservation(userEmail, reservation);
+            return ResponseEntity.ok(reservation);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 }
