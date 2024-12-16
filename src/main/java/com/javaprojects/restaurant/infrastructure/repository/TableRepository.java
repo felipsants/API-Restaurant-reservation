@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface TableRepository extends MongoRepository<TableEntity, String> {
     Optional<TableEntity> findByName(String name);
     List<TableEntity> findByAvailable(Boolean available);
-    List<TableEntity> findByAvailableTrueOrderByPlacesAsc();
+    List<TableEntity> findByAvailableTrueOrderByPlacesDesc();
 }
