@@ -18,4 +18,6 @@ public class ReservationEntity {
     public String reservationHour;
     public boolean anniversary;
     public int quantity;
+    public boolean canceled = false;
+    public String cancellationReason;
 }

@@ -1,5 +1,6 @@
 package com.javaprojects.restaurant.controller;
 
+import com.javaprojects.restaurant.infrastructure.entity.ReservationCancelReason;
 import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import com.javaprojects.restaurant.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +41,14 @@ public class ReservationController {
         return reservationService.getReservationsByHour(reservationHour);
     }
 
-    @GetMapping("/delete/{id}")
-    public ResponseEntity<String> deleteReservation(@PathVariable String id) {
-        reservationService.deleteReservation(id);
-        return ResponseEntity.ok("Reservation deleted and tables released.");
+    @PutMapping("/cancel/{id}")
+    public ResponseEntity<String> cancelReservation(@PathVariable String id, @RequestBody ReservationCancelReason request) {
+        try{
+            reservationService.cancelReservation(id, request.getReason());
+            return ResponseEntity.ok("Reservation Cancelled");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping

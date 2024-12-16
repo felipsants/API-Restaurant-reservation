@@ -18,6 +18,8 @@ public class ReservationService {
 
     @Autowired
     private TableRepository tableRepository;
+    @Autowired
+    private TableService tableService;
 
     public ReservationEntity createReservation(ReservationEntity reservation) {
         int requiredSeats = reservation.getQuantity();
@@ -67,22 +69,20 @@ public class ReservationService {
                 .orElseThrow(() -> new IllegalArgumentException("Reservation Not Found"));
     }
 
-    public void deleteReservation(String reservationId) {
+    public void cancelReservation(String reservationId, String reason) {
         ReservationEntity reservation = getReservationById(reservationId);
 
-        // Identificar as mesas alocadas (usando o nome das mesas armazenado no campo `table`)
-        String[] tableNames = reservation.getTable().split(", ");
-
-        // Atualizar a disponibilidade das mesas
-        for (String tableName : tableNames) {
-            TableEntity table = tableRepository.findByName(tableName)
-                    .orElseThrow(() -> new RuntimeException("Table not found: " + tableName));
-            table.setAvailable(true);
-            tableRepository.save(table);
+        if(reservation.isCanceled()){
+            throw new RuntimeException("Reservation Already Canceled");
         }
 
-        // Remover a reserva
-        reservationRepository.deleteById(reservationId);
+        reservation.setCanceled(true);
+        reservation.setCancellationReason(reason);
+        reservationRepository.save(reservation);
+
+        TableEntity table = tableService.getTablesByName(reservation.getTable());
+        table.setAvailable(true);
+        tableRepository.save(table);
     }
 
     public ReservationEntity getReservationByUserEmail(String userEmail) {
