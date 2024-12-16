@@ -17,5 +17,4 @@ public class UserEntity {
     public String name;
     public Long phoneNumber;
     public String email;
-    public boolean anniversary;
 }
