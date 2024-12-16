@@ -28,4 +28,22 @@ public class UserService {
     public List<UserEntity> getAllUsers() {
         return userRepository.findAll();
     }
+
+    public UserEntity updateUser(String id,UserEntity updatedUser) {
+        UserEntity existingUser = getUserById(id);
+
+        if(updatedUser.getName() != null){
+            existingUser.setName(updatedUser.getName());
+        }
+
+        if(updatedUser.getEmail() != null){
+            existingUser.setEmail(updatedUser.getEmail());
+        }
+
+        if(updatedUser.getPhoneNumber() != null){
+            existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
+        }
+
+        return userRepository.save(existingUser);
+    }
 }
