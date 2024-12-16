@@ -24,9 +24,9 @@ public class ReservationController {
         return reservationService.getReservationById(id);
     }
 
-    @GetMapping("/user/{userId}")
-    public ReservationEntity getReservationsByUserId(@PathVariable String userId) {
-        return reservationService.getReservationByUserId(userId);
+    @GetMapping("/user/{userEmail}")
+    public ReservationEntity getReservationsByUserEmail(@PathVariable String userEmail) {
+        return reservationService.getReservationByUserEmail(userEmail);
     }
 
     @GetMapping("/date/{reservationDate}")

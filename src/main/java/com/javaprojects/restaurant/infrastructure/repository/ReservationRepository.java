@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReservationRepository extends MongoRepository<ReservationEntity, String> {
-    Optional<ReservationEntity> findByUserId(String userId);
+    Optional<ReservationEntity> findByUserEmail(String userEmail);
     List<ReservationEntity> findByReservationDate(String reservationDate);
     List<ReservationEntity> findByReservationHour(String reservationHour);
 }

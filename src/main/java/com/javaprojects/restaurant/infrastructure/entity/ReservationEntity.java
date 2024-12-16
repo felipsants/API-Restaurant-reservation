@@ -12,9 +12,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ReservationEntity {
     @Id
     public String id;
-    public String userId;
+    public String userEmail;
     public String table;
     public String reservationDate;
     public String reservationHour;
+    public boolean anniversary;
     public int quantity;
 }
