@@ -17,8 +17,13 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping
-    public ReservationEntity createReservation(@RequestBody ReservationEntity reservation) {
-        return reservationService.createReservation(reservation);
+    public ResponseEntity<ReservationEntity> createReservation(@RequestBody ReservationEntity reservation) {
+        try {
+            ReservationEntity createdReservation = reservationService.createReservation(reservation);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @GetMapping("/{id}")
@@ -51,6 +56,16 @@ public class ReservationController {
         }
     }
 
+    @PutMapping("/close/{id}")
+    public ResponseEntity<String> closeReservation(@PathVariable String id) {
+        try{
+            reservationService.closeReservation(id);
+            return ResponseEntity.ok("Reservation Closed");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     @GetMapping
     public List<ReservationEntity> getAllReservations() {
         return reservationService.getAllReservations();
@@ -65,4 +80,6 @@ public class ReservationController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
+
+
 }

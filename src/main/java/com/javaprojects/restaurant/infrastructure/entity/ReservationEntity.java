@@ -19,5 +19,6 @@ public class ReservationEntity {
     public boolean anniversary;
     public int quantity;
     public boolean canceled = false;
+    public boolean closed = false;
     public String cancellationReason;
 }

@@ -7,6 +7,7 @@ import com.javaprojects.restaurant.infrastructure.repository.TableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,50 +19,64 @@ public class ReservationService {
 
     @Autowired
     private TableRepository tableRepository;
+
     @Autowired
     private TableService tableService;
 
+    private static final int MAX_CAPACITY = 200;
+
     public ReservationEntity createReservation(ReservationEntity reservation) {
         int requiredSeats = reservation.getQuantity();
-        // Ordenar as mesas do maior para o menor número de lugares
-        List<TableEntity> availableTables = tableRepository.findByAvailableTrueOrderByPlacesDesc();
 
-        // Lista de mesas que serão reservadas
+        // Verifica se a lotação máxima do dia foi atingida
+        int totalReservationsForDay = reservationRepository.findByReservationDate(reservation.getReservationDate()).stream()
+                .mapToInt(ReservationEntity::getQuantity)
+                .sum();
+
+        if (totalReservationsForDay + requiredSeats > MAX_CAPACITY) {
+            throw new RuntimeException("Lotação máxima atingida para " + reservation.getReservationDate());
+        }
+
+        // Alocar mesas
+        List<TableEntity> reservedTables = allocateTables(requiredSeats);
+
+        // Associar mesas à reserva
+        String tableNames = reservedTables.stream()
+                .map(TableEntity::getName)
+                .collect(Collectors.joining(", "));
+        reservation.setTable(tableNames);
+
+        // Salvar reserva
+        return reservationRepository.save(reservation);
+    }
+
+    private List<TableEntity> allocateTables(int requiredSeats) {
+        List<TableEntity> availableTables = tableRepository.findByAvailableTrueOrderByPlacesDesc();
         List<TableEntity> reservedTables = new ArrayList<>();
         int totalSeatsAllocated = 0;
 
-        // Primeiro, tenta alocar as maiores mesas possíveis
         for (TableEntity table : availableTables) {
             if (totalSeatsAllocated < requiredSeats) {
                 reservedTables.add(table);
                 totalSeatsAllocated += table.getPlaces();
 
-                // Se já atingiu ou superou a quantidade necessária de lugares, pare
                 if (totalSeatsAllocated >= requiredSeats) {
                     break;
                 }
             }
         }
 
-        // Verifica se foi possível alocar lugares suficientes
         if (totalSeatsAllocated < requiredSeats) {
             throw new RuntimeException("Não há mesas suficientes disponíveis para acomodar essa reserva.");
         }
 
-        // Marcar as mesas como não disponíveis
+        // Marcar mesas como indisponíveis
         reservedTables.forEach(table -> {
             table.setAvailable(false);
             tableRepository.save(table);
         });
 
-        // Associa as mesas reservadas à reserva
-        String tableNames = reservedTables.stream()
-                .map(TableEntity::getName)
-                .collect(Collectors.joining(", "));
-        reservation.setTable(tableNames);
-
-        // Salvar e retornar a reserva
-        return reservationRepository.save(reservation);
+        return reservedTables;
     }
 
     public ReservationEntity getReservationById(String id) {
@@ -72,7 +87,7 @@ public class ReservationService {
     public void cancelReservation(String reservationId, String reason) {
         ReservationEntity reservation = getReservationById(reservationId);
 
-        if(reservation.isCanceled()){
+        if (reservation.isCanceled()) {
             throw new RuntimeException("Reservation Already Canceled");
         }
 
@@ -80,9 +95,43 @@ public class ReservationService {
         reservation.setCancellationReason(reason);
         reservationRepository.save(reservation);
 
-        TableEntity table = tableService.getTablesByName(reservation.getTable());
-        table.setAvailable(true);
-        tableRepository.save(table);
+        // Liberar as mesas associadas à reserva
+        String[] tableNames = reservation.getTable().split(", ");
+        for (String tableName : tableNames) {
+            TableEntity table = tableService.getTablesByName(tableName.trim());
+            table.setAvailable(true);
+            tableRepository.save(table);
+        }
+    }
+
+    public void closeReservation(String reservationId){
+        ReservationEntity reservation = getReservationById(reservationId);
+
+        if (reservation.isClosed()){
+            throw new RuntimeException("Reservation Already Closed");
+        }
+
+        reservation.setClosed(true);
+        reservationRepository.save(reservation);
+
+        String[] tableNames = reservation.getTable().split(", ");
+        for (String tableName : tableNames) {
+            TableEntity table = tableService.getTablesByName(tableName.trim());
+            table.setAvailable(true);
+            tableRepository.save(table);
+        }
+    }
+
+    public List<ReservationEntity> getReservationsByDate(String date) {
+        return reservationRepository.findByReservationDate(date);
+    }
+
+    public List<ReservationEntity> getReservationsByHour(String hour) {
+        return reservationRepository.findByReservationHour(hour);
+    }
+
+    public List<ReservationEntity> getAllReservations() {
+        return reservationRepository.findAll();
     }
 
     public ReservationEntity getReservationByUserEmail(String userEmail) {
@@ -90,38 +139,21 @@ public class ReservationService {
                 .orElseThrow(() -> new IllegalArgumentException("Reservation Not Found"));
     }
 
-    public List<ReservationEntity> getReservationsByDate(String date) {
-        if (date != null) {
-            // Lógica para buscar apenas por data
-            return reservationRepository.findByReservationDate(date);
-        }
-        return reservationRepository.findAll(); // Se não passar data nem hora, retorna todas as reservas
-    }
-
-    public List<ReservationEntity> getReservationsByHour(String hour) {
-        if (hour != null) {
-            // Lógica para buscar apenas por data
-            return reservationRepository.findByReservationHour(hour);
-        }
-        return reservationRepository.findAll();
-    }
-
-    public List<ReservationEntity> getAllReservations() {
-        return reservationRepository.findAll();  // Busca todas as reservas
-    }
-
-    public ReservationEntity updateReservation(String userEmail, ReservationEntity updatedReservation) {
+    public void updateReservation(String userEmail, ReservationEntity updatedReservation) {
         ReservationEntity reservation = getReservationByUserEmail(userEmail);
 
-        if(updatedReservation.getReservationDate() != null) {
+        if (updatedReservation.getReservationDate() != null) {
             reservation.setReservationDate(updatedReservation.getReservationDate());
         }
 
-        if(updatedReservation.getReservationHour() != null) {
-            reservation.setReservationHour(updatedReservation.getReservationHour());
+        if (updatedReservation.getQuantity() > 0) {
+            reservation.setQuantity(updatedReservation.getQuantity());
         }
 
-        return reservationRepository.save(reservation);
-    }
+        if (updatedReservation.isAnniversary()) {
+            reservation.setAnniversary(true);
+        }
 
+        reservationRepository.save(reservation);
+    }
 }
