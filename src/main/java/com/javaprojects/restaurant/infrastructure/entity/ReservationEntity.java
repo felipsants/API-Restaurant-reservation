@@ -18,7 +18,10 @@ public class ReservationEntity {
     public String reservationHour;
     public boolean anniversary;
     public int quantity;
+    
+    @Builder.Default
     public boolean canceled = false;
+    @Builder.Default
     public boolean closed = false;
     public String cancellationReason;
 }

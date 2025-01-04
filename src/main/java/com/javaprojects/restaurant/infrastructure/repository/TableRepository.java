@@ -1,6 +1,5 @@
 package com.javaprojects.restaurant.infrastructure.repository;
 
-import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import com.javaprojects.restaurant.infrastructure.entity.TableEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

@@ -17,14 +17,20 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping
-    public ResponseEntity<ReservationEntity> createReservation(@RequestBody ReservationEntity reservation) {
+    public ResponseEntity<?> createReservation(@RequestBody ReservationEntity reservation) {
         try {
             ReservationEntity createdReservation = reservationService.createReservation(reservation);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            if (e.getMessage().startsWith("Lotação máxima atingida")) {
+                // Cliente foi adicionado à fila, retornar status 202 (Accepted)
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body("Adicionado à fila de espera.");
+            }
+            // Erros gerais retornam 400
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erro ao criar reserva: " + e.getMessage());
         }
     }
+    
 
     @GetMapping("/{id}")
     public ReservationEntity getReservationsById(@PathVariable String id) {
@@ -81,5 +87,8 @@ public class ReservationController {
         }
     }
 
-
+    @GetMapping("/queue/status")
+    public ResponseEntity<String> checkQueueStatus() {
+        return ResponseEntity.ok(reservationService.checkQueueStatus());
+    }
 }

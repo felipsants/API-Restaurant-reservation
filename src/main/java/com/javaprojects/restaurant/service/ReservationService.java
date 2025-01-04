@@ -2,12 +2,14 @@ package com.javaprojects.restaurant.service;
 
 import com.javaprojects.restaurant.infrastructure.entity.TableEntity;
 import com.javaprojects.restaurant.infrastructure.repository.ReservationRepository;
+import com.javaprojects.restaurant.infrastructure.WaintingList.WaitingList;
 import com.javaprojects.restaurant.infrastructure.entity.ReservationEntity;
 import com.javaprojects.restaurant.infrastructure.repository.TableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,34 +25,42 @@ public class ReservationService {
     @Autowired
     private TableService tableService;
 
-    private static final int MAX_CAPACITY = 200;
+    private static final int MAX_CAPACITY = 14;
+    private WaitingList waitingList = new WaitingList();
 
     public ReservationEntity createReservation(ReservationEntity reservation) {
         int requiredSeats = reservation.getQuantity();
-
-        // Verifica se a lotação máxima do dia foi atingida
-        int totalReservationsForDay = reservationRepository.findByReservationDate(reservation.getReservationDate()).stream()
+    
+        // Verifica a lotação máxima do dia
+        int totalReservationsForDay = reservationRepository.findByReservationDate(reservation.getReservationDate())
+                .stream()
                 .mapToInt(ReservationEntity::getQuantity)
                 .sum();
-
+    
+        // Se a lotação máxima for atingida, adiciona na fila
         if (totalReservationsForDay + requiredSeats > MAX_CAPACITY) {
-            throw new RuntimeException("Lotação máxima atingida para " + reservation.getReservationDate());
+            
+    
+            // Retorna uma mensagem indicando que foi adicionado à fila
+            throw new ResponseStatusException(HttpStatus.ACCEPTED, 
+            "Lotação máxima atingida para " + reservation.getReservationDate());
         }
-
-        // Alocar mesas
-        List<TableEntity> reservedTables = allocateTables(requiredSeats);
-
+    
+        // Alocar mesas disponíveis
+        List<TableEntity> reservedTables = allocateTables(requiredSeats, reservation);
+    
         // Associar mesas à reserva
         String tableNames = reservedTables.stream()
                 .map(TableEntity::getName)
                 .collect(Collectors.joining(", "));
         reservation.setTable(tableNames);
-
+    
         // Salvar reserva
         return reservationRepository.save(reservation);
     }
+    
 
-    private List<TableEntity> allocateTables(int requiredSeats) {
+    private List<TableEntity> allocateTables(int requiredSeats, ReservationEntity reservation) {
         List<TableEntity> availableTables = tableRepository.findByAvailableTrueOrderByPlacesDesc();
         List<TableEntity> reservedTables = new ArrayList<>();
         int totalSeatsAllocated = 0;
@@ -67,7 +77,10 @@ public class ReservationService {
         }
 
         if (totalSeatsAllocated < requiredSeats) {
-            throw new RuntimeException("Não há mesas suficientes disponíveis para acomodar essa reserva.");
+            // Adicionar o cliente na fila
+            waitingList.addToQueue(reservation.getUserEmail());
+            throw new ResponseStatusException(HttpStatus.ACCEPTED, 
+            "Não há mesas suficientes disponíveis para acomodar essa reserva. Cliente adicionado à fila de espera.");
         }
 
         // Marcar mesas como indisponíveis
@@ -101,6 +114,12 @@ public class ReservationService {
             TableEntity table = tableService.getTablesByName(tableName.trim());
             table.setAvailable(true);
             tableRepository.save(table);
+        }
+
+        if (!waitingList.isQueueEmpty()) {
+            String nextInLine = waitingList.removeFromQueue();
+            System.out.println("Chamando próximo cliente: " + nextInLine);
+            // Aqui você pode enviar uma notificação ao cliente
         }
     }
 
@@ -155,5 +174,13 @@ public class ReservationService {
         }
 
         reservationRepository.save(reservation);
+    }
+
+    public String checkQueueStatus() {
+        if (waitingList.isQueueEmpty()) {
+            return "Fila vazia.";
+        } else {
+            return "Fila com " + waitingList.getQueueSize() + " pessoas. Próximo: " + waitingList.getFirstInQueue();
+        }
     }
 }
