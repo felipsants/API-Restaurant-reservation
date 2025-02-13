@@ -10,4 +10,6 @@ public interface ReservationRepository extends MongoRepository<ReservationEntity
     Optional<ReservationEntity> findByUserEmail(String userEmail);
     List<ReservationEntity> findByReservationDate(String reservationDate);
     List<ReservationEntity> findByReservationHour(String reservationHour);
+    List<ReservationEntity> findByReservationDateAndCanceledFalse(String reservationDate);
+
 }

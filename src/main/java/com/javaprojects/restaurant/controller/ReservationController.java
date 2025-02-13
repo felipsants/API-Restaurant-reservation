@@ -91,4 +91,9 @@ public class ReservationController {
     public ResponseEntity<String> checkQueueStatus() {
         return ResponseEntity.ok(reservationService.checkQueueStatus());
     }
+
+    @GetMapping("/queue/next")
+    public ResponseEntity<String> getNextInQueue() {
+        return ResponseEntity.ok(reservationService.NextInQueue());
+    }
 }

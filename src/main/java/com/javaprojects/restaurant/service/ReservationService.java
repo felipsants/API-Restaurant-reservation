@@ -32,10 +32,10 @@ public class ReservationService {
         int requiredSeats = reservation.getQuantity();
     
         // Verifica a lotação máxima do dia
-        int totalReservationsForDay = reservationRepository.findByReservationDate(reservation.getReservationDate())
-                .stream()
-                .mapToInt(ReservationEntity::getQuantity)
-                .sum();
+        int totalReservationsForDay = reservationRepository.findByReservationDateAndCanceledFalse(reservation.getReservationDate())
+            .stream()
+            .mapToInt(ReservationEntity::getQuantity)
+            .sum();
     
         // Se a lotação máxima for atingida, adiciona na fila
         if (totalReservationsForDay + requiredSeats > MAX_CAPACITY) {
@@ -182,5 +182,14 @@ public class ReservationService {
         } else {
             return "Fila com " + waitingList.getQueueSize() + " pessoas. Próximo: " + waitingList.getFirstInQueue();
         }
+    }
+
+    public String NextInQueue() {
+        if (waitingList.isQueueEmpty()) {
+            return "Fila vazia.";
+        } else {
+            System.out.println("Próximo: " + waitingList.getFirstInQueue());
+        }
+        return waitingList.removeFromQueue();
     }
 }
